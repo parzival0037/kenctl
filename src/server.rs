@@ -14,12 +14,14 @@ use tower_http::cors::CorsLayer;
 const INDEX_HTML: &str = include_str!("../webui/index.html");
 const APP_JS: &str = include_str!("../webui/app.js");
 const STYLE_CSS: &str = include_str!("../webui/style.css");
+const LOGO_SVG: &str = include_str!("../webui/kenctl-logo.svg");
 
 pub fn router(state: Arc<AppState>) -> Router {
     Router::new()
         .route("/", get(index))
         .route("/app.js", get(app_js))
         .route("/style.css", get(style_css))
+        .route("/kenctl-logo.svg", get(logo_svg))
         .route("/api/state", get(get_state))
         .route("/api/keys", get(get_keys))
         .route("/api/buttons", get(get_buttons))
@@ -63,6 +65,16 @@ async fn style_css() -> impl IntoResponse {
             (axum::http::header::CACHE_CONTROL, "no-store"),
         ],
         STYLE_CSS,
+    )
+}
+
+async fn logo_svg() -> impl IntoResponse {
+    (
+        [
+            (axum::http::header::CONTENT_TYPE, "image/svg+xml; charset=utf-8"),
+            (axum::http::header::CACHE_CONTROL, "no-store"),
+        ],
+        LOGO_SVG,
     )
 }
 
