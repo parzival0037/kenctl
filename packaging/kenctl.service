@@ -1,0 +1,14 @@
+[Unit]
+Description=KenCtl — Kensington trackball configuration daemon
+Documentation=https://github.com/parzival0037/kenctl
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+ExecStart=%h/.local/bin/kenctl run
+Restart=on-failure
+RestartSec=5
+Environment=RUST_LOG=info
+
+[Install]
+WantedBy=default.target

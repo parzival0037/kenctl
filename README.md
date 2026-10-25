@@ -83,29 +83,50 @@ input layer, it is independent of X11 vs. Wayland.
 
 - Linux with evdev and uinput.
 - The user must be in the `input` group and able to open `/dev/uinput`.
+- A systemd user session (for the autostart service).
 - A recent stable Rust toolchain to build.
 
 ## Build
 
 ```bash
-cargo build --release
+cargo build --release --locked
 ```
 
-## Grant uinput access (one time)
+## Install (recommended)
 
 ```bash
 sudo ./install.sh
 ```
 
-This installs a udev rule granting the `input` group access to `/dev/uinput`,
-loads the module, and adds your user to `input`. Log out and back in if your
-group membership changed.
+It performs the one-time host setup (udev rule for `/dev/uinput`, load the
+`uinput` module, add your user to `input`) and installs:
 
-## Run
+- `~/.local/bin/kenctl`
+- `~/.config/systemd/user/kenctl.service`
+
+It then enables and starts the service for the current login. Re-run it after
+building a new release to update the binary.
+
+```bash
+systemctl --user status kenctl
+systemctl --user restart kenctl
+journalctl --user -u kenctl -f
+```
+
+The service starts at login. If you were just added to `input`, log out and
+back in once, then run `systemctl --user restart kenctl`.
+
+## Run manually
 
 ```bash
 ./target/release/kenctl run
 # open http://127.0.0.1:3789/
+```
+
+Stop the service first so two instances do not grab the same device:
+
+```bash
+systemctl --user stop kenctl
 ```
 
 Useful commands:
@@ -121,8 +142,9 @@ kenctl proto button --from BTN_SIDE --to KEY_C --modifier KEY_LEFTCTRL --dry-run
 kenctl proto scroll --speed 2.0 --dry-run
 ```
 
-`--dry-run` reads events without grabbing the device, so it needs no root and
-no `/dev/uinput`.
+The commands above assume `~/.local/bin` is on your `PATH`; otherwise use
+`./target/release/kenctl`. `--dry-run` reads events without grabbing the device,
+so it needs no root and no `/dev/uinput`.
 
 ## Profiles and macros
 
@@ -150,12 +172,13 @@ cargo build
 ```
 
 The web UI is embedded into the binary at compile time (`include_str!`), so
-restart `kenctl run` after changing `webui/`.
+restart `kenctl run` (or `systemctl --user restart kenctl`) after changing
+`webui/`.
 
 ## Roadmap
 
-- systemd user service and autostart
-- release binaries and packaging
+- `v0.1.0` GitHub release and binary packaging
+- broader hardware testing beyond the Expert Mouse Wireless
 - per-application profiles
 - curated virtual-device key set
 
