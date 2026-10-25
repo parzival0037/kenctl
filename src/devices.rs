@@ -5,7 +5,7 @@ use std::path::PathBuf;
 /// Known Kensington product ids -> model name.
 ///
 /// Source: `supportTrackballs` extracted from the Konnect frontend bundle
-/// (see `docs/trackball-architecture.md`).
+/// (see the supported-hardware table in `README.md`).
 pub const SUPPORTED_PIDS: &[(u16, &str)] = &[
     (0x8018, "Expert Mouse Wireless Trackball"),
     (0x8019, "Expert Mouse Wireless Trackball (JP)"),
