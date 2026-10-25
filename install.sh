@@ -45,6 +45,13 @@ RUNTIME_DIR="/run/user/${TARGET_UID}"
 INSTALL_DIR="${TARGET_HOME}/.local/bin"
 SERVICE_DIR="${TARGET_HOME}/.config/systemd/user"
 
+as_user() {
+  sudo -u "${TARGET_USER}" env \
+    XDG_RUNTIME_DIR="${RUNTIME_DIR}" \
+    DBUS_SESSION_BUS_ADDRESS="unix:path=${RUNTIME_DIR}/bus" \
+    "$@"
+}
+
 UINPUT_RULE=/etc/udev/rules.d/99-kenctl-uinput.rules
 MODULES_LOAD=/etc/modules-load.d/kenctl-uinput.conf
 
@@ -79,16 +86,18 @@ fi
 chgrp input /dev/uinput
 chmod 0660 /dev/uinput
 
+WAS_IN_INPUT=0
+if id -nG "${TARGET_USER}" | tr ' ' '\n' | grep -qx input; then
+  WAS_IN_INPUT=1
+fi
+
 echo "==> adding ${TARGET_USER} to the input group"
 groupadd -f input
 usermod -aG input "${TARGET_USER}"
 
 # Stop the old manual daemon / service before replacing the binary.
 if [[ -S "${RUNTIME_DIR}/bus" ]]; then
-  sudo -u "${TARGET_USER}" env \
-    XDG_RUNTIME_DIR="${RUNTIME_DIR}" \
-    DBUS_SESSION_BUS_ADDRESS="unix:path=${RUNTIME_DIR}/bus" \
-    systemctl --user stop kenctl.service 2>/dev/null || true
+  as_user systemctl --user stop kenctl.service 2>/dev/null || true
 fi
 if pgrep -u "${TARGET_USER}" -x kenctl >/dev/null 2>&1; then
   echo "==> stopping the running kenctl process"
@@ -105,20 +114,23 @@ install -d -m 0755 -o "${TARGET_USER}" -g "${TARGET_GROUP}" "${SERVICE_DIR}"
 install -m 0644 -o "${TARGET_USER}" -g "${TARGET_GROUP}" "${SERVICE_SRC}" "${SERVICE_DIR}/kenctl.service"
 
 if [[ -S "${RUNTIME_DIR}/bus" ]]; then
-  echo "==> enabling and starting the user service"
-  sudo -u "${TARGET_USER}" env \
-    XDG_RUNTIME_DIR="${RUNTIME_DIR}" \
-    DBUS_SESSION_BUS_ADDRESS="unix:path=${RUNTIME_DIR}/bus" \
-    systemctl --user daemon-reload
-  sudo -u "${TARGET_USER}" env \
-    XDG_RUNTIME_DIR="${RUNTIME_DIR}" \
-    DBUS_SESSION_BUS_ADDRESS="unix:path=${RUNTIME_DIR}/bus" \
-    systemctl --user enable --now kenctl.service
-  echo
-  sudo -u "${TARGET_USER}" env \
-    XDG_RUNTIME_DIR="${RUNTIME_DIR}" \
-    DBUS_SESSION_BUS_ADDRESS="unix:path=${RUNTIME_DIR}/bus" \
-    systemctl --user --no-pager --full status kenctl.service || true
+  echo "==> enabling the user service"
+  as_user systemctl --user daemon-reload
+  as_user systemctl --user enable kenctl.service
+
+  if [[ ${WAS_IN_INPUT} -eq 1 ]]; then
+    echo "==> starting the user service"
+    if ! as_user systemctl --user restart kenctl.service; then
+      echo "warning: service failed to start" >&2
+      echo "         journalctl --user -u kenctl -n 30" >&2
+    fi
+    echo
+    as_user systemctl --user --no-pager --full status kenctl.service || true
+  else
+    echo "==> ${TARGET_USER} was just added to the input group"
+    echo "    log out and back in, then start the service:"
+    echo "      systemctl --user start kenctl"
+  fi
 else
   echo
   echo "No active systemd user session found. Enable the service after login:"
