@@ -12,6 +12,7 @@ Not affiliated with Kensington Technology Group. “Kensington”, “Expert Mou
 Early alpha. Developed and tested on the **Kensington Expert Mouse Wireless
 Trackball (K72359WW, `047d:8018`)**. Other supported Kensington trackballs are
 detected, but button layouts may vary.
+Also, tested on **Kensington ProFit Ergo Vertical Wireless Trackball** the BTN_MIDDLE can be used as forward and BTN_SIDE can be used as Browser Backward Macros once you record the actions.
 
 ## Quick Install
 ### Linux/Debian
