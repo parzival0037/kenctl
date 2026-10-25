@@ -1,6 +1,7 @@
 <div align="center"> <h1>KenCtl</h1> <img src="docs/kenctl-logo.svg" alt="KenCtl logo" width="500">              
 
- 
+<p> 
+</p>
 <img src="docs/GUI_image.png" alt="GUI" width="400">
 <p> Linux configuration for Kensington mouse/trackballs button remapping, pointer and scroll tuning, profiles, and a macro recorder, with a local web UI. </p> </div>
 
