@@ -10,6 +10,24 @@ Early alpha. Developed and tested on the **Kensington Expert Mouse Wireless
 Trackball (K72359WW, `047d:8018`)**. Other supported Kensington trackballs are
 detected, but button layouts may vary.
 
+### Quick Install
+## Linux/Debian
+```bash
+curl -fsSL https://raw.githubusercontent.com/parzival0037/kenctl/main/install-remote.sh | sudo bash
+```
+
+This downloads the latest release, sets up `/dev/uinput`, installs
+`~/.local/bin/kenctl` and the systemd user service, then enables it.
+
+Prebuilt releases are currently x86_64 only. Method 1 needs a published GitHub
+release; if none is available yet, use Method 2. To inspect the script first:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/parzival0037/kenctl/main/install-remote.sh | less
+```
+See below for Method-1, Method-2 for installing from source or manual install.
+
+
 ## Supported hardware
 
 Detection is generic: any Kensington input device (`047d:*`) is discovered, and
@@ -85,8 +103,8 @@ input layer, it is independent of X11 vs. Wayland.
 
 ## Install
 
-### Method 1 — one-line installer
-
+### Method 1 — Quick Install
+## Linux/Debian
 ```bash
 curl -fsSL https://raw.githubusercontent.com/parzival0037/kenctl/main/install-remote.sh | sudo bash
 ```
