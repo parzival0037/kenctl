@@ -1,12 +1,10 @@
-# KenCtl
+<h1 align="center">KenCtl</h1>
 
-Linux configuration for Kensington trackballs — button remapping, pointer and
-scroll tuning, profiles, and a macro recorder, with a local web UI.
+<p align="center"> <img src="docs/kenctl_logo.svg" alt="KenCtl logo" width="200"> </p>
 
-> **Not affiliated with Kensington Technology Group.** “Kensington”, “Expert
-> Mouse”, “SlimBlade”, and “Konnect” are trademarks of their respective owners.
-> KenCtl is an independent Open-Source, host-side implementation Linux Tool; it does not modify
-> device firmware.
+<p align="center"> Linux configuration for Kensington trackballs — button remapping, pointer and scroll tuning, profiles, and a macro recorder, with a local web UI. </p>
+
+Not affiliated with Kensington Technology Group. “Kensington”, “Expert Mouse”, “SlimBlade”, and “Konnect” are trademarks of their respective owners. KenCtl is an independent Open-Source, host-side implementation Linux Tool; it does not modify device firmware.
 
 ## Status
 
