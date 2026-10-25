@@ -10,8 +10,8 @@ Early alpha. Developed and tested on the **Kensington Expert Mouse Wireless
 Trackball (K72359WW, `047d:8018`)**. Other supported Kensington trackballs are
 detected, but button layouts may vary.
 
-### Quick Install
-## Linux/Debian
+## Quick Install
+### Linux/Debian
 ```bash
 curl -fsSL https://raw.githubusercontent.com/parzival0037/kenctl/main/install-remote.sh | sudo bash
 ```
