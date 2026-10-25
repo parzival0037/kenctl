@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>KenCtl for Linux</title>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <span class="dot" id="engine-dot"></span>
+    <h1>KenCtl <span class="thin">for Linux</span></h1>
+  </div>
+  <div class="topbar-right">
+    <span class="pill" id="active-pill"></span>
+    <span class="pill" id="store-path"></span>
+    <button class="btn ghost" id="refresh-btn" type="button">Refresh</button>
+  </div>
+</header>
+
+<main>
+  <p class="engine-note" id="engine-note"></p>
+
+  <section class="card">
+    <h2>Devices</h2>
+    <div id="devices" class="device-list"><p class="muted">Scanning…</p></div>
+  </section>
+
+  <section class="card">
+    <h2>Profile</h2>
+    <div class="row wrap">
+      <select id="profile-select"></select>
+      <button class="btn" id="new-btn" type="button">New profile</button>
+      <button class="btn" id="save-btn" type="button">Save</button>
+      <button class="btn primary" id="save-activate-btn" type="button">Save &amp; activate</button>
+      <button class="btn danger" id="delete-btn" type="button">Delete</button>
+    </div>
+    <div class="row wrap" id="profile-fields">
+      <label class="field">
+        <span>Name</span>
+        <input type="text" id="name-input" autocomplete="off">
+      </label>
+      <label class="field">
+        <span>Pointer speed <b id="pointer-val"></b></span>
+        <input type="range" id="pointer-speed" min="0.05" max="5" step="0.05">
+      </label>
+      <label class="field">
+        <span>Scroll speed <b id="scroll-val"></b></span>
+        <input type="range" id="scroll-speed" min="0.05" max="5" step="0.05">
+      </label>
+      <label class="check"><input type="checkbox" id="inv-x"> Invert pointer X</label>
+      <label class="check"><input type="checkbox" id="inv-y"> Invert pointer Y</label>
+      <label class="check"><input type="checkbox" id="inv-scroll"> Invert scroll</label>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="row space">
+      <h2>Button mapping</h2>
+      <div class="row">
+        <button class="btn" id="add-mapping-btn" type="button">+ Add mapping</button>
+      </div>
+    </div>
+    <p class="muted">Leave a button unmapped to keep its default behaviour. Changes apply immediately once saved.</p>
+    <div id="mappings" class="mapping-list"></div>
+  </section>
+
+  <section class="card">
+    <div class="row space">
+      <h2>Macros</h2>
+      <div class="row">
+        <button class="btn" id="record-macro-btn" type="button">Record action</button>
+        <button class="btn" id="add-macro-btn" type="button">+ Add macro</button>
+      </div>
+    </div>
+    <div id="macros" class="macro-list"></div>
+  </section>
+
+  <section class="card">
+    <h2>On-device settings</h2>
+    <div id="hardware"></div>
+  </section>
+</main>
+
+<datalist id="all-keys"></datalist>
+
+<div id="rec-overlay" class="rec-overlay" hidden></div>
+
+<div id="recorder" class="recorder" hidden>
+  <div class="rec-head">
+    <span class="rec-dot"></span>
+    <strong>Recording macro</strong>
+    <span id="rec-count" class="muted"></span>
+  </div>
+  <p class="muted">Press keys or click mouse buttons. Clicks on this bar are ignored; rename the macro in the list afterwards.</p>
+  <div id="rec-steps" class="rec-steps"></div>
+  <div class="rec-foot">
+    <button id="rec-stop" class="btn primary" type="button">Stop &amp; add</button>
+    <button id="rec-cancel" class="btn" type="button">Cancel</button>
+  </div>
+</div>
+
+<div id="toast" class="toast" hidden></div>
+<script src="/app.js"></script>
+</body>
+</html>

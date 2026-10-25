@@ -1,0 +1,36 @@
+[package]
+name = "kenctl"
+version = "0.1.0"
+edition = "2021"
+description = "Linux configuration daemon and web UI for Kensington trackballs"
+license = "MIT"
+
+[[bin]]
+name = "kenctl"
+path = "src/main.rs"
+
+[dependencies]
+# async runtime + web server
+tokio = { version = "1", features = ["full"] }
+axum = "0.7"
+tower-http = { version = "0.5", features = ["fs", "cors"] }
+
+# input subsystem
+evdev = "0.13"
+
+# hardware (vendor hidraw channel; read-only until usbfs access is granted)
+hidapi = "2"
+
+# config / persistence
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+# cli + logging + errors
+clap = { version = "4", features = ["derive"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+anyhow = "1"
+
+[profile.release]
+lto = true
+strip = true

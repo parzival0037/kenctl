@@ -1,0 +1,6 @@
+/target
+/_legacy
+/HERMES_KCONNECT_PLAN.md
+*.bak
+*.profraw
+.DS_Store
