@@ -84,28 +84,39 @@ input layer, it is independent of X11 vs. Wayland.
 - Linux with evdev and uinput.
 - The user must be in the `input` group and able to open `/dev/uinput`.
 - A systemd user session (for the autostart service).
-- A recent stable Rust toolchain to build.
+- **Method 1:** x86_64 Linux, `curl`, and `tar`.
+- **Method 2:** a recent stable Rust toolchain.
 
-## Build
+## Install
+
+### Method 1 — one-line installer
 
 ```bash
-cargo build --release --locked
+curl -fsSL https://raw.githubusercontent.com/parzival0037/kenctl/main/install-remote.sh | sudo bash
 ```
 
-## Install (recommended)
+This downloads the latest release, sets up `/dev/uinput`, installs
+`~/.local/bin/kenctl` and the systemd user service, then enables it.
+
+Prebuilt releases are currently x86_64 only. Method 1 needs a published GitHub
+release; if none is available yet, use Method 2. To inspect the script first:
 
 ```bash
+curl -fsSL https://raw.githubusercontent.com/parzival0037/kenctl/main/install-remote.sh | less
+```
+
+### Method 2 — build from source
+
+```bash
+git clone https://github.com/parzival0037/kenctl.git
+cd kenctl
+cargo build --release --locked
 sudo ./install.sh
 ```
 
-It performs the one-time host setup (udev rule for `/dev/uinput`, load the
-`uinput` module, add your user to `input`) and installs:
+This builds locally and installs the same binary and service.
 
-- `~/.local/bin/kenctl`
-- `~/.config/systemd/user/kenctl.service`
-
-It then enables and starts the service for the current login. Re-run it after
-building a new release to update the binary.
+After either method:
 
 ```bash
 systemctl --user status kenctl
@@ -119,7 +130,8 @@ back in once, then run `systemctl --user restart kenctl`.
 ## Run manually
 
 ```bash
-./target/release/kenctl run
+~/.local/bin/kenctl run
+# or from a source checkout: ./target/release/kenctl run
 # open http://127.0.0.1:3789/
 ```
 
@@ -143,6 +155,7 @@ kenctl proto scroll --speed 2.0 --dry-run
 ```
 
 The commands above assume `~/.local/bin` is on your `PATH`; otherwise use
+`~/.local/bin/kenctl`. From a source checkout you can also use
 `./target/release/kenctl`. `--dry-run` reads events without grabbing the device,
 so it needs no root and no `/dev/uinput`.
 

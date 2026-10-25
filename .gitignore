@@ -1,4 +1,5 @@
 /target
+/dist
 /_legacy
 /SDLC_PLAN.md
 *.bak

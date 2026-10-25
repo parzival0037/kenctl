@@ -1,0 +1,52 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libudev-dev pkg-config
+
+      - name: Test
+        run: cargo test --locked
+
+      - name: Check web UI syntax
+        run: node --check webui/app.js
+
+      - name: Build
+        run: cargo build --release --locked
+
+      - name: Package
+        run: |
+          set -euo pipefail
+          ASSET=kenctl-x86_64-unknown-linux-gnu.tar.gz
+          mkdir -p dist/pkg
+          cp target/release/kenctl dist/pkg/
+          cp packaging/kenctl.service dist/pkg/
+          cp README.md LICENSE dist/pkg/
+          tar -C dist/pkg -czf "dist/${ASSET}" .
+          (cd dist && sha256sum "${ASSET}" > "${ASSET}.sha256")
+
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release create "${GITHUB_REF_NAME}" \
+            dist/kenctl-x86_64-unknown-linux-gnu.tar.gz \
+            dist/kenctl-x86_64-unknown-linux-gnu.tar.gz.sha256 \
+            --title "KenCtl ${GITHUB_REF_NAME}" \
+            --generate-notes

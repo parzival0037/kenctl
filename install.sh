@@ -82,6 +82,8 @@ if [[ ! -e /dev/uinput ]]; then
   exit 1
 fi
 
+groupadd -f input
+
 # udev applies this on next boot; do it now for the running kernel.
 chgrp input /dev/uinput
 chmod 0660 /dev/uinput
@@ -92,7 +94,6 @@ if id -nG "${TARGET_USER}" | tr ' ' '\n' | grep -qx input; then
 fi
 
 echo "==> adding ${TARGET_USER} to the input group"
-groupadd -f input
 usermod -aG input "${TARGET_USER}"
 
 # Stop the old manual daemon / service before replacing the binary.
