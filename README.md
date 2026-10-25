@@ -5,7 +5,7 @@ scroll tuning, profiles, and a macro recorder, with a local web UI.
 
 > **Not affiliated with Kensington Technology Group.** “Kensington”, “Expert
 > Mouse”, “SlimBlade”, and “Konnect” are trademarks of their respective owners.
-> KenCtl is an independent, host-side reimplementation; it does not modify
+> KenCtl is an independent, host-side implementation; it does not modify
 > device firmware.
 
 ## Status
