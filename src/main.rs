@@ -162,6 +162,13 @@ async fn main() -> Result<()> {
                     mapped,
                     if mapped == 1 { "" } else { "s" }
                 );
+                for (source, chord) in &p.chords {
+                    let own = describe(&p.action_for(source));
+                    println!("    chord {source} (own action: {own})");
+                    for (btn, a) in &chord.buttons {
+                        println!("      {btn:<16} {}", describe(a));
+                    }
+                }
             }
             Ok(())
         }
@@ -278,5 +285,21 @@ fn print_status(v: &Value) {
 
     if let Some(msg) = v["hardware"]["message"].as_str() {
         println!("hardware       : {msg}");
+    }
+}
+
+/// One-line description of an action for `kenctl profiles`.
+fn describe(action: &profiles::Action) -> String {
+    use profiles::Action;
+    match action {
+        Action::Default => "default".into(),
+        Action::None => "disabled".into(),
+        Action::Button { code } => code.clone(),
+        Action::Key { code, modifiers } => {
+            let mut parts: Vec<&str> = modifiers.iter().map(String::as_str).collect();
+            parts.push(code);
+            parts.join("+")
+        }
+        Action::Macro { id } => format!("macro {id}"),
     }
 }

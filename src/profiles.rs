@@ -24,6 +24,35 @@ pub enum Action {
     Macro { id: String },
 }
 
+fn yes() -> bool {
+    true
+}
+
+/// A chord attached to a button: while that button is held, `buttons`
+/// replaces the other buttons' mappings.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct Chord {
+    /// Source key name -> action used while the chord is active.
+    #[serde(default)]
+    pub buttons: BTreeMap<String, Action>,
+    /// Buttons without a chord entry use their base mapping (false = blocked).
+    #[serde(default = "yes")]
+    pub passthrough: bool,
+}
+
+impl Default for Chord {
+    fn default() -> Self {
+        Chord {
+            buttons: BTreeMap::new(),
+            passthrough: true,
+        }
+    }
+}
+
+fn empty_key(a: &Action) -> bool {
+    matches!(a, Action::Key { code, .. } if code.trim().is_empty())
+}
+
 impl Default for Action {
     fn default() -> Self {
         Action::Default
@@ -95,6 +124,10 @@ pub struct Profile {
 
     #[serde(default)]
     pub macros: BTreeMap<String, Macro>,
+
+    /// Source key name -> chord that button activates while held.
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub chords: BTreeMap<String, Chord>,
 }
 
 impl Default for Profile {
@@ -108,6 +141,7 @@ impl Default for Profile {
             invert_scroll: false,
             buttons: BTreeMap::new(),
             macros: BTreeMap::new(),
+            chords: BTreeMap::new(),
         }
     }
 }
@@ -132,6 +166,28 @@ impl Profile {
             let _ = k;
             !matches!(a, Action::Key { code, .. } if code.trim().is_empty())
         });
+        for (source, chord) in self.chords.iter_mut() {
+            chord.buttons.remove(source);
+            chord.buttons.retain(|_, a| !empty_key(a));
+        }
+    }
+
+    /// Reject chords that refer to macros this profile does not define.
+    pub fn validate(&self) -> Result<()> {
+        for (source, chord) in &self.chords {
+            for action in chord.buttons.values() {
+                if let Action::Macro { id } = action {
+                    if !self.macros.contains_key(id) {
+                        anyhow::bail!("chord on {source} refers to unknown macro `{id}`");
+                    }
+                }
+            }
+        }
+        Ok(())
+    }
+
+    pub fn chord_for(&self, key: &str) -> Option<&Chord> {
+        self.chords.get(key)
     }
 
     pub fn action_for(&self, key: &str) -> Action {
@@ -171,6 +227,7 @@ impl ProfileStore {
 
     pub fn upsert(&mut self, mut profile: Profile) -> Result<String> {
         profile.sanitize();
+        profile.validate()?;
         let original = profile.name.clone();
 
         // Update in place when the name already exists, otherwise append.
@@ -312,6 +369,58 @@ mod tests {
         assert!(json.contains("\"action\":\"down\""));
         let back: MacroStep = serde_json::from_str(&json).unwrap();
         assert_eq!(back, step);
+    }
+
+    #[test]
+    fn chord_json_from_spec_parses_with_defaults() {
+        let raw = r#"{
+            "name": "P",
+            "buttons": { "BTN_SIDE": { "type": "key", "code": "KEY_LEFTCTRL" } },
+            "chords": {
+                "BTN_SIDE": {
+                    "buttons": {
+                        "BTN_LEFT":  { "type": "key", "code": "KEY_C" },
+                        "BTN_RIGHT": { "type": "key", "code": "KEY_V" }
+                    }
+                }
+            }
+        }"#;
+        let p: Profile = serde_json::from_str(raw).unwrap();
+        let chord = p.chord_for("BTN_SIDE").unwrap();
+        assert!(chord.passthrough);
+        assert_eq!(chord.buttons.len(), 2);
+        let back: Profile = serde_json::from_str(&serde_json::to_string(&p).unwrap()).unwrap();
+        assert_eq!(back, p);
+    }
+
+    #[test]
+    fn profiles_without_chords_omit_the_field() {
+        let json = serde_json::to_string(&Profile::default()).unwrap();
+        assert!(!json.contains("chords"));
+        let chord: Chord = serde_json::from_str("{}").unwrap();
+        assert!(chord.passthrough && chord.buttons.is_empty());
+    }
+
+    #[test]
+    fn sanitize_strips_self_reference_and_empty_keys() {
+        let mut chord = Chord::default();
+        chord.buttons.insert("BTN_SIDE".into(), Action::None);
+        chord.buttons.insert("BTN_LEFT".into(), Action::Key { code: " ".into(), modifiers: vec![] });
+        chord.buttons.insert("BTN_RIGHT".into(), Action::Key { code: "KEY_V".into(), modifiers: vec![] });
+        let mut p = Profile::default();
+        p.chords.insert("BTN_SIDE".into(), chord);
+        p.sanitize();
+        let chord = p.chord_for("BTN_SIDE").unwrap();
+        assert_eq!(chord.buttons.keys().collect::<Vec<_>>(), vec!["BTN_RIGHT"]);
+    }
+
+    #[test]
+    fn chord_with_unknown_macro_is_rejected() {
+        let mut chord = Chord::default();
+        chord.buttons.insert("BTN_LEFT".into(), Action::Macro { id: "nope".into() });
+        let mut p = Profile::default();
+        p.chords.insert("BTN_SIDE".into(), chord);
+        assert!(ProfileStore::default().upsert(p).is_err());
     }
 
     #[test]
