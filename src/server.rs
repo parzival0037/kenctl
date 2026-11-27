@@ -201,7 +201,9 @@ async fn upsert_profile(
 ) -> Result<Json<String>, ApiError> {
     let name = {
         let mut store = state.store.lock().map_err(internal)?;
-        store.upsert(profile).map_err(internal)?
+        store
+            .upsert(profile)
+            .map_err(|e| (StatusCode::BAD_REQUEST, format!("{e:#}")))?
     };
     state.commit().map_err(internal)?;
     tracing::info!("saved profile {name}");
@@ -218,7 +220,9 @@ async fn put_profile(
     }
     let saved = {
         let mut store = state.store.lock().map_err(internal)?;
-        store.upsert(profile).map_err(internal)?
+        store
+            .upsert(profile)
+            .map_err(|e| (StatusCode::BAD_REQUEST, format!("{e:#}")))?
     };
     state.commit().map_err(internal)?;
     Ok(Json(saved))

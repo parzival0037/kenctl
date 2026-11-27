@@ -191,6 +191,7 @@ const ACTION_TYPES = [
   ["key", "Keyboard key"],
   ["macro", "Run macro"],
 ];
+const MODIFIERS = ["KEY_LEFTCTRL", "KEY_LEFTSHIFT", "KEY_LEFTALT", "KEY_LEFTMETA"];
 
 function actionType(action) {
   return action && action.type ? action.type : "default";
@@ -199,13 +200,83 @@ function actionType(action) {
 function renderMappings() {
   const box = $("mappings");
   box.replaceChildren();
-  const buttons = draft.buttons || {};
-  const entries = Object.entries(buttons);
+  draft.buttons ||= {};
+  draft.chords ||= {};
+  // A button with only a chord still gets a row (its own action is default).
+  for (const source of Object.keys(draft.chords)) draft.buttons[source] ||= { type: "default" };
+  const entries = Object.entries(draft.buttons);
   if (!entries.length) {
     box.append(el("p", { class: "empty", text: "No custom mappings — every button behaves as shipped." }));
     return;
   }
   for (const [source, action] of entries) box.append(mappingRow(source, action));
+}
+
+/// Type picker plus the fields for one action. `set` replaces the action.
+function actionFields(action, set) {
+  const type = actionType(action);
+  const fields = [
+    el("select", {
+      onchange: (e) => { set(blankAction(e.target.value)); renderMappings(); },
+      children: ACTION_TYPES.map(([v, label]) => option(v, label, v === type)),
+    }),
+  ];
+
+  if (type === "button") {
+    const target = el("select", {
+      class: "grew",
+      onchange: (e) => { action.code = e.target.value; },
+      children: btnKeys.map((b) => option(b.code, b.label, b.code === action.code)),
+    });
+    if (action.code && !btnKeys.some((b) => b.code === action.code)) {
+      target.prepend(option(action.code, btnLabel(action.code), true));
+    }
+    fields.push(target);
+  }
+
+  if (type === "key") {
+    fields.push(el("input", {
+      class: "grew",
+      type: "text",
+      list: "all-keys",
+      value: action.code || "",
+      placeholder: "KEY_C",
+      onchange: (e) => { action.code = e.target.value.toUpperCase(); },
+    }));
+
+    const mods = el("div", { class: "mods" }, el("span", { class: "lbl", text: "Modifier:" }));
+    const held = new Set(action.modifiers || []);
+    for (const m of MODIFIERS) {
+      mods.append(
+        el("label", { class: "check" },
+          el("input", {
+            type: "checkbox",
+            checked: held.has(m),
+            onchange: (e) => {
+              const set = new Set(action.modifiers || []);
+              e.target.checked ? set.add(m) : set.delete(m);
+              action.modifiers = [...set];
+            },
+          }),
+          m.replace("KEY_LEFT", "").replace("KEY_", ""),
+        )
+      );
+    }
+    fields.push(mods);
+  }
+
+  if (type === "macro") {
+    const opts = Object.values(draft.macros || {});
+    if (!opts.length) opts.push({ id: "", name: "(no macros defined)" });
+    fields.push(
+      el("select", {
+        class: "grew",
+        onchange: (e) => { action.id = e.target.value; },
+        children: opts.map((m) => option(m.id, m.name, m.id === action.id)),
+      })
+    );
+  }
+  return fields;
 }
 
 function mappingRow(source, action) {
@@ -224,87 +295,100 @@ function mappingRow(source, action) {
       const b = draft.buttons;
       b[to] = b[source];
       delete b[source];
+      const l = draft.chords;
+      if (l[source]) {
+        l[to] = l[source];
+        delete l[source];
+        delete l[to].buttons[to];
+      }
       renderMappings();
     },
     children: [option(source, btnLabel(source))],
   });
   for (const b of btnKeys) if (b.code !== source) src.append(option(b.code, b.label));
 
-  const act = el("select", {
-    onchange: (e) => {
-      draft.buttons[source] = blankAction(e.target.value);
-      renderMappings();
-    },
-    children: ACTION_TYPES.map(([v, label]) => option(v, label, v === type)),
-  });
-
-  const row = el("div", { class: "mapping", "data-source": source }, src, act);
-
-  if (type === "button") {
-    const target = el("select", {
-      class: "grew",
-      onchange: (e) => { action.code = e.target.value; },
-      children: btnKeys.map((b) => option(b.code, b.label, b.code === action.code)),
-    });
-    if (action.code && !btnKeys.some((b) => b.code === action.code)) {
-      target.prepend(option(action.code, btnLabel(action.code), true));
-    }
-    row.append(target);
+  const chord = draft.chords[source];
+  const row = el("div", { class: "mapping", "data-source": source }, src);
+  if (chord) {
+    const n = Object.keys(chord.buttons || {}).length;
+    row.append(el("span", { class: "tag chord", text: `Chord · ${n} ${n === 1 ? "entry" : "entries"}` }));
   }
-
-  if (type === "key") {
-    const target = el("input", {
-      class: "grew",
-      type: "text",
-      list: "all-keys",
-      value: action.code || "",
-      placeholder: "KEY_C",
-      onchange: (e) => { action.code = e.target.value.toUpperCase(); },
-    });
-    row.append(target);
-
-    const mods = el("div", { class: "mods" }, el("span", { class: "lbl", text: "Hold:" }));
-    const held = new Set(action.modifiers || []);
-    for (const m of ["KEY_LEFTCTRL", "KEY_LEFTSHIFT", "KEY_LEFTALT", "KEY_LEFTMETA"]) {
-      mods.append(
-        el("label", { class: "check" },
-          el("input", {
-            type: "checkbox",
-            checked: held.has(m),
-            onchange: (e) => {
-              const set = new Set(action.modifiers || []);
-              e.target.checked ? set.add(m) : set.delete(m);
-              action.modifiers = [...set];
-            },
-          }),
-          m.replace("KEY_LEFT", "").replace("KEY_", ""),
-        )
-      );
-    }
-    row.append(mods);
-  }
-
-  if (type === "macro") {
-    const opts = Object.values(draft.macros || {});
-    if (!opts.length) opts.push({ id: "", name: "(no macros defined)" });
-    row.append(
-      el("select", {
-        class: "grew",
-        onchange: (e) => { action.id = e.target.value; },
-        children: opts.map((m) => option(m.id, m.name, m.id === action.id)),
-      })
-    );
-  }
-
+  // Full-width lines (the modifier checkboxes) go below the inline controls,
+  // so Chord and Remove stay on the first line next to the key field.
+  const fields = actionFields(action, (a) => { draft.buttons[source] = a; });
+  const isLine = (n) => n.classList && n.classList.contains("mods");
   row.append(
+    ...fields.filter((n) => !isLine(n)),
+    el("label", { class: "check" },
+      el("input", {
+        type: "checkbox",
+        checked: !!chord,
+        onchange: (e) => {
+          if (e.target.checked) draft.chords[source] = blankChord();
+          else delete draft.chords[source];
+          renderMappings();
+        },
+      }),
+      "Chord"),
     el("button", {
       class: "btn sm danger",
       type: "button",
       text: "Remove",
-      onclick: () => { delete draft.buttons[source]; renderMappings(); },
-    })
+      onclick: () => { delete draft.buttons[source]; delete draft.chords[source]; renderMappings(); },
+    }),
+    ...fields.filter(isLine),
   );
+  if (chord) row.append(chordEditor(source, chord));
   return row;
+}
+
+/// Settings for the chord a button activates while held.
+function chordEditor(source, chord) {
+  chord.buttons ||= {};
+  const box = el("div", { class: "chord-editor" });
+
+  if (source === "BTN_LEFT") {
+    box.append(el("p", { class: "hint", text: "Warning: left click becomes a chord button and can no longer drag on its own." }));
+  }
+
+  box.append(el("p", { class: "muted", text: "The action above is pressed when this button is pressed and released when it is released. Set it to Disable to only switch the chord." }));
+
+  box.append(el("label", { class: "check chord-line" },
+    el("input", {
+      type: "checkbox",
+      checked: chord.passthrough !== false,
+      onchange: (e) => { chord.passthrough = e.target.checked; },
+    }),
+    "Unmapped buttons keep their normal action while held"));
+
+  // One row per other device button.
+  const table = el("div", { class: "chord-table" }, el("span", { class: "lbl", text: "While held" }));
+  for (const b of btnKeys) {
+    if (b.code === source) continue;
+    const entry = chord.buttons[b.code];
+    const line = el("div", { class: "chord-line" }, el("span", { class: "btn-name", text: b.label }));
+    if (!entry) {
+      line.append(el("select", {
+        onchange: (e) => { chord.buttons[b.code] = blankAction(e.target.value); renderMappings(); },
+        children: [option("", "Unchanged", true), ...ACTION_TYPES.map(([v, l]) => option(v, l))],
+      }));
+    } else {
+      line.append(
+        ...actionFields(entry, (a) => { chord.buttons[b.code] = a; }),
+        el("button", {
+          class: "btn sm", type: "button", text: "Clear",
+          onclick: () => { delete chord.buttons[b.code]; renderMappings(); },
+        }),
+      );
+    }
+    table.append(line);
+  }
+  box.append(table);
+  return box;
+}
+
+function blankChord() {
+  return { buttons: {}, passthrough: true };
 }
 
 function buttonsHas(name) {
@@ -598,6 +682,7 @@ function wire() {
       invert_scroll: false,
       buttons: {},
       macros: {},
+      chords: {},
     };
     originalName = null;
     renderProfileForm();

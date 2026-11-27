@@ -139,12 +139,25 @@ input[type="checkbox"] { accent-color: var(--accent); }
 }
 .mapping select, .mapping input, .macro select, .macro input { min-width: 0; }
 .mapping .grew, .macro .grew { flex: 1 1 140px; }
+.mapping > .check { align-self: center; }
 .macro .steps { display: flex; flex-direction: column; gap: 6px; flex: 1 1 100%; margin-top: 6px; }
 .macro .hint { flex: 1 1 100%; margin: 2px 0 0; color: var(--warn); font-size: 12px; }
 .step { display: flex; gap: 8px; align-items: center; }
 .step .idx { width: 20px; color: var(--muted); font: 11px/1 ui-monospace, Menlo, monospace; }
 .mods { display: flex; gap: 10px; align-items: center; flex: 1 1 100%; flex-wrap: wrap; margin-top: 4px; }
 .mods .lbl { color: var(--muted); font-size: 12px; }
+
+.tag.chord { color: var(--accent); border-color: rgba(79, 156, 255, .45); align-self: center; }
+.chord-editor {
+  flex: 1 1 100%; display: flex; flex-direction: column; gap: 8px;
+  margin-top: 4px; padding: 10px 0 0 12px;
+  border-top: 1px solid var(--line); border-left: 2px solid var(--accent);
+}
+.chord-editor .hint { margin: 0; color: var(--warn); font-size: 12px; }
+.chord-line { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.chord-line .lbl, .chord-table > .lbl { color: var(--muted); font-size: 12px; min-width: 70px; }
+.chord-table { display: flex; flex-direction: column; gap: 6px; }
+.chord-table .btn-name { font: 12px/1 ui-monospace, Menlo, monospace; min-width: 130px; }
 
 .empty { color: var(--muted); font-size: 13px; padding: 6px 0; }
 
